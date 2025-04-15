@@ -7,7 +7,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     address public manager;
     address[] public players;
 
-    uint64 public subscriptionId;
+    uint256 public subscriptionId;
     bytes32 public keyHash;
     uint32 public callbackGasLimit = 100000;
     uint16 public requestConfirmations = 3;
@@ -17,9 +17,12 @@ contract Lottery is VRFConsumerBaseV2Plus {
 
     mapping(uint256 => bool) public validRequests;
 
+
+    event WinnerPicked(address indexed winner, uint256 amount);
+
     constructor(
         address _vrfCoordinator,
-        uint64 _subscriptionId,
+        uint256 _subscriptionId,
         bytes32 _keyHash
     ) VRFConsumerBaseV2Plus(_vrfCoordinator) {
         manager = msg.sender;
@@ -59,9 +62,13 @@ contract Lottery is VRFConsumerBaseV2Plus {
     ) internal override {
         require(validRequests[requestId], "Invalid request ID");
 
+        uint256 prize = address(this).balance;
+
         uint256 winnerIndex = randomWords[0] % players.length;
         address winner = players[winnerIndex];
         payable(winner).transfer(address(this).balance);
+
+        emit WinnerPicked(winner, prize);
 
         delete players;
         delete validRequests[requestId];
